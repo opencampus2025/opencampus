@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>神通川流域水マップ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=yes" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js'></script>
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css' type='text/css' />
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css' rel='stylesheet' />
+<!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="css/smart-style.css">
+<link rel="stylesheet" href="css/pc-style.css" media="screen and (min-width: 768px)">
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; -webkit-text-size-adjust: 100%;}
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+               /* 通常のスタイル */
+.menu {
+  background: #00000000;
+  position: absolute;
+  z-index: 1;
+  top: 55%;
+  left: 5px;
+  border-radius: 3px;
+  border: none;
+  font-family: 'Open Sans', sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.folder {
+  border: 2px solid #333;
+  border-radius: 5px;
+  margin-bottom: 1px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  max-width: 150px; /* .folder の最大幅を指定 */
+}
+
+/* スマートフォン用のスタイル */
+@media (max-width: 767px) {
+  .menu {
+    max-height: 40%;
+    width: 120px;
+  }
+
+  .folder {
+    max-width: 120px; /* スマートフォン用に幅を調整 */
+  }
+}
+
+/* タブレット用のスタイル */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .menu {
+    max-height: 60%;
+    width: 150px; /* タブレット用に幅を調整 */
+  }
+
+  .folder {
+    max-width: 150px; /* タブレット用に幅を調整 */
+  }
+}
+
+/* デスクトップ用のスタイル */
+@media (min-width: 1024px) {
+  .menu {
+top: 35%;
+    max-height: 80%;
+    width: 180px; /* デスクトップ用に幅を調整 */
+height: 400px;
+  }
+
+  .folder {
+    max-width: 180px; /* デスクトップ用に幅を調整 */
+height: 400px;
+  }
+}
+
+     .folder-title {
+  font-size: 12px;
+  color: #000000;
+  display: block;
+  margin: 0;
+  padding: 5px; /* パディングを調整してください */
+  text-decoration: none;
+  border: none;
+  background-color: transparent;
+  text-align: left;
+  width: 180px; /* 幅を自動調整 */
+  white-space: nowrap; /* テキストが折り返さないように */
+  overflow: hidden; /* オーバーフローを隠す */
+  text-overflow: ellipsis; /* オーバーフローした場合に省略記号を表示 */
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.3s, color 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+/* デスクトップ用のスタイル */
+@media (min-width: 1024px) {
+  .folder-title {
+font-size: 17px;
+  }
+
+  .folder {
+    max-width: 160px; /* デスクトップ用に幅を調整 */
+height: 400px;
+  }
+}
+
+.folder-title img {
+      width: 20px; /* 画像の幅を200ピクセルに指定 */
+      height: 20px; /* 画像の高さを150ピクセルに指定 */
+margin-right: 5px;
+    }
+    .folder-buttons {
+      display: none;
+      margin-left: 20px;
+    }
+    .menu button {
+      font-size: 11px;
+      color: #000000;
+      display: block;
+      margin: 0;
+      padding: 5px;
+      text-decoration: none;
+     border: none;
+      padding: 0;
+      text-decoration: underline; /* ボタンの名前の下に線を引く */
+      margin-bottom: 0px;
+      background-color: #f5f5f5;
+      text-align: left;
+      width: 130px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+/* デスクトップ用のスタイル */
+@media (min-width: 1024px) {
+  .menu button {
+    font-size: 15px;
+  }
+  
+  .menu button.active {
+    background-color: #EEDDEE;
+    color: #000000;
+    border: 2px solid #FF0000; /* ボーダーの追加 */
+    /* または、アイコンの追加などの視覚的な手段を検討 */
+  }
+
+  .menu button:hover {
+    background-color: #e6e6fa;
+    color: #000000;
+ border: 2px solid #FF0000; /* ボーダーの追加 */
+    /* または、アイコンの追加などの視覚的な手段を検討 */
+  }
+
+  .folder.active {
+    background-color: #3498db;
+    color: #ffffff;
+    border: 2px solid #FF0000; /* ボーダーの追加 */
+    /* または、アイコンの追加などの視覚的な手段を検討 */
+  }
+
+  .folder:hover {
+    background-color: #e6e6fa;
+    color: #000000;
+  }
+
+  .folder button.active {
+    background-color: #EEDDEE;
+    color: #000000;
+    border: 2px solid #FF0000; /* ボーダーの追加 */
+    /* または、アイコンの追加などの視覚的な手段を検討 */
+  }
+
+  .folder button:hover {
+    background-color: #e6e6fa;
+    color: #000000;
+  }
+}
+
+    .geocoder {
+      position: absolute;
+      top: 5px;
+left: 10px;
+      z-index: 1;
+      width: 5%;
+      justify-content: center;
+      align-items: center;
+
+    }
+.mapboxgl-ctrl-geocoder {
+min-width: 100%;
+}
+
+    #info {
+      height: 100%;
+      width: 20%;
+      overflow-y: auto;
+      position: absolute;
+      float: left;
+      top: 10px;
+        right: 10px;
+      padding: 10px;
+    }
+h1:before {
+  position: absolute;
+  bottom: 5px;
+  left: calc(50% - 30px);
+  width: 60px;
+  height: 5px;
+  content: '';
+  border-radius: 3px;
+  background: #3498db;
+}
+.focused {
+      border: 2px solid red;
+      outline: none;
+    }
+  </style>
+/* いじらない */
+  <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+  <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.4.0/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.4.0/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css' rel='stylesheet' />
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css"></head>
+
+<body>
+/* フォルダとボタン */
+  <div class='menu'>
+<button id='reset'><b>初期化</b></button>
+<div class="folder">
+  <div class="folder-title" onclick="toggleButtons('folder0')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1687150073981-3zOYEf77yl.png?width=800&dpr=2" alt="フォルダ0の画像">
+    </span>
+    <span style="display: inline-block;"><b>避難</b></span>
+  </div>
+  <div class="folder-buttons" id="folder0">
+<button id='㋷避難情報'>㋷避難情報</button> 
+<button id='㋷避難所情報'>㋷避難所情報</button> 
+    <button id='避難所'>避難所</button> 
+  </div>
+  </div>
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder1')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1687150073112-OAAT2mhZVq.jpg?width=800&dpr=2" alt="フォルダ1の画像">
+</span>
+      <span style="display: inline-block;"><b>浸水</b></span>
+  </div>
+  <div class="folder-buttons" id="folder1">
+<button id='最短到達時間'>最短到達時間</button>
+<button id='津波浸水想定'>津波浸水想定</button>
+<button id='想定最大降雨時の最大浸水深'>河川最大浸水深</button> 
+<button id='想定最大降雨時の浸水継続時間'>浸水継続時間</button> 
+<button id='想定最大降雨時の最大流速'>最大流速</button> 
+<button id='道路冠水'>㋷道路冠水</button>
+    </div>
+  </div>
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder2')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1687150073157-Ay6mIgpO5V.jpg?width=800&dpr=2" alt="フォルダ2の画像">
+</span>
+      <span style="display: inline-block;"><b>土砂</b></span>
+  </div>
+  <div class="folder-buttons" id="folder2">
+<button id='土砂災害警戒区域'>土砂災害警戒区域</button> 
+</div>
+    </div>
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder4')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1687150073163-YrwvRPeZfz.jpg?width=800&dpr=2" alt="フォルダ4の画像">
+</span>
+      <span style="display: inline-block;"><b>気象</b></span>
+  </div>
+  <div class="folder-buttons" id="folder4">
+<button id='㋷現在の雨雲'>㋷現在の雨雲</button> 
+<button id='㋷気象警報・注意報'>㋷気象警報</button> 
+<button id='過去最大雨量'>過去最大雨量</button>   
+    </div>
+    </div>
+
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder5')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1698737022947-W14ZP80g7X.jpg?width=800&dpr=2" alt="フォルダ5の画像">
+</span>
+      <span style="display: inline-block;"><b>水位</b></span>
+  </div>
+  <div class="folder-buttons" id="folder5">
+<button id='水位観測'>㋷水位観測</button> 
+    </div>
+    </div>
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder3')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1687150073090-WhjVJ4dgq8.jpg?width=800&dpr=2" alt="フォルダ3の画像">
+</span>
+      <span style="display: inline-block;"><b>水施設</b></span>
+  </div>
+  <div class="folder-buttons" id="folder3">
+
+<button id='ダム'>ダム</button> 
+<button id='下水道処理施設'>下水道処理施設</button> 
+</div>
+    </div>
+<div class="folder">
+<div class="folder-title" onclick="toggleButtons('folder6')">
+<span style="display: inline-block; vertical-align: middle;">
+      <img src="https://assets.st-note.com/img/1698736877611-GztODuux6p.jpg?width=800&dpr=2" alt="フォルダ5の画像">
+</span>
+      <span style="display: inline-block;"><b>まち</b></span>
+  </div>
+  <div class="folder-buttons" id="folder6">
+<button id='人口推移'>人口推移</button> 
+<button id='水観光情報'>水観光情報</button> 
+<button id='土地利用'>土地利用</button>
+<button id='立地適正化計画'>立地適正化計画</button>  
+</div>
+    </div>
+
+<button id='自然情報'><b></b></button>
+  </div>
+  <div id='map'></div>
+  <div id="geocoder" class="geocoder"></div>
+  <div id='info' style='position: absolute; top: 0; left: 0; padding: 10px;'>
+  <div id='info-content'></div>
+<div id='image-container' style='position: absolute; top: 0px; left: 0px; width: 1000px; height: 100px;'></div>
+</div>
+</div>
+  <script>
+/* 現在地を自動取得 */
+    navigator.geolocation.getCurrentPosition(success, error);
+
+    function success(position) {
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+
+        // 現在位置の座標を使用して地図を表示する処理を追加
+        map.setCenter([longitude, latitude]);
+    }
+
+    function error() {
+        console.log('現在位置情報を取得できませんでした。');
+    }
+  </script>
+  <script>
+/* マップのリンクやアクセストークン、初期位置を設定 */
+    mapboxgl.accessToken = 'pk.eyJ1IjoiMTEyMDMxIiwiYSI6ImNsaTE3d3d1dzA2aXYzbG8zd2ZkbGl5emsifQ.GLCXA06JAO8UNHtmkh6uew';
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/112031/cllady7ea00c201pogvhvdgu6', // 使用する地図のスタイル
+      center: [137.213639, 36.695889], // 地図の中心座標を指定
+      zoom: 14 // 地図のズームレベルを指定
+        });
+
+// Geolocation APIを使用してユーザの現在位置を取得
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lng = position.coords.longitude;
+                var lat = position.coords.latitude;
+
+                // 現在位置にマーカーを追加
+                var marker = new mapboxgl.Marker()
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+            });
+        }
+
+/* ボタンの番号付け1^22 */
+         var group1Button = document.getElementById('避難所');
+        var group2Button = document.getElementById('想定最大降雨時の最大浸水深');
+        var group3Button = document.getElementById('土砂災害警戒区域');
+var group4Button = document.getElementById('津波浸水想定');
+var group5Button = document.getElementById('想定最大降雨時の最大流速');
+var group6Button = document.getElementById('想定最大降雨時の浸水継続時間');
+var group7Button = document.getElementById('最短到達時間');
+var group8Button = document.getElementById('ダム');
+var group11Button = document.getElementById('下水道処理施設');
+var group13Button = document.getElementById('水位観測');
+var group14Button = document.getElementById('㋷気象警報・注意報');
+var group15Button = document.getElementById('㋷避難情報');
+var group16Button = document.getElementById('㋷避難所情報');
+var group17Button = document.getElementById('道路冠水');
+var group18Button = document.getElementById('人口推移');
+var group19Button = document.getElementById('水観光情報');
+var group20Button = document.getElementById('土地利用');
+var group21Button = document.getElementById('立地適正化計画');
+var group22Button = document.getElementById('過去最大雨量');group10Button = document.getElementById('自然情報');
+var resetButton = document.getElementById('reset');
+var imageContainer = document.getElementById('image-container');
+
+        group1Button.addEventListener('click', toggleGroupVisibility);
+        group2Button.addEventListener('click', toggleGroupVisibility);
+        group3Button.addEventListener('click', toggleGroupVisibility);
+group4Button.addEventListener('click', toggleGroupVisibility);
+group5Button.addEventListener('click', toggleGroupVisibility);
+group6Button.addEventListener('click', toggleGroupVisibility);
+group7Button.addEventListener('click', toggleGroupVisibility);
+group8Button.addEventListener('click', toggleGroupVisibility);
+group10Button.addEventListener('click', toggleGroupVisibility);
+group11Button.addEventListener('click', toggleGroupVisibility);
+group13Button.addEventListener('click', toggleGroupVisibility);
+group14Button.addEventListener('click', toggleGroupVisibility);
+group15Button.addEventListener('click', toggleGroupVisibility);
+group16Button.addEventListener('click', toggleGroupVisibility);
+group17Button.addEventListener('click', toggleGroupVisibility);
+group18Button.addEventListener('click', toggleGroupVisibility);
+group19Button.addEventListener('click', toggleGroupVisibility);
+group20Button.addEventListener('click', toggleGroupVisibility);
+group21Button.addEventListener('click', toggleGroupVisibility);
+group22Button.addEventListener('click', toggleGroupVisibility);
+resetButton.addEventListener('click', resetVisibility);
+
+        function toggleGroupVisibility(event) {
+            var groupId = event.target.id;
+            var groupLayers;
+
+            if (groupId === '避難所') {
+                groupLayers = ['ShelterE'];imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902391-e7JIEI4JJL.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '避難所';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            } else if (groupId === '想定最大降雨時の最大浸水深') {
+                groupLayers = ['l21', 'l22', 'l23', 'l24', 'l25', 'l26'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902424-iqv27d24Lt.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '最大浸水深';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            } else if (groupId === '土砂災害警戒区域') {
+                groupLayers = ['SCaution-Landslide', 'SCaution-Debrisflow', 'SCaution-steepslopes', 'Caution-Landslide', 'Caution-Debrisflow', 'Caution-steepslopes'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902415-FoUvqijjoO.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '土砂災害警戒区域';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            } else if (groupId === '津波浸水想定') {
+                groupLayers = ['tsunami-1', 'tsunami-2', 'tsunami-3', 'tsunami-4', 'tsunami-5'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902424-iqv27d24Lt.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '津波浸水想定';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+} else if (groupId === '想定最大降雨時の最大流速') {
+                groupLayers = ['velocity1', 'velocity2', 'velocity3'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1687187257421-1GXhSBjNO7.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '最大流速';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            } else if (groupId === '想定最大降雨時の浸水継続時間') {
+                groupLayers = ['time1', 'time2', 'time3', 'time4'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128903442-tTKKXzlQjL.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '浸水継続時間';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+} else if (groupId === '最短到達時間') {
+                groupLayers = ['k1', 'k2', 'k3', 'k4'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902305-66FnGXodKM.jpg?width=2000&height=2000&fit=bounds&format=jpg&quality=85" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '最短到達時間';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+} else if (groupId === 'ダム') {
+                groupLayers = ['dam'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902427-iUSJsbh3r7.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = 'ダム';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+} else if (groupId === '下水道処理施設') {
+                groupLayers = ['waterfacility'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128903553-jF7vqiexwb.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '下水道処理施設';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '水位観測') {
+                groupLayers = ['Suii'];
+imageContainer.innerHTML = '<img src="" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '水位観測';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '道路冠水') {
+                groupLayers = ['car'];
+imageContainer.innerHTML = '<img src="" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '道路冠水';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '人口推移') {
+                groupLayers = ['zinkou'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902358-Kpen7uMaa8.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '人口推移';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '水観光情報') {
+                groupLayers = ['kankou'];
+imageContainer.innerHTML = '<img src="" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '水観光情報';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '土地利用') {
+                groupLayers = ['tochi1', 'tochi2', 'tochi3', 'tochi4', 'tochi5', 'tochi6', 'tochi7', 'tochi8', 'tochi9', 'tochi10', 'tochi11', 'tochi12'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128903623-CUNn23vJn5.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '土地利用';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '立地適正化計画') {
+                groupLayers = ['ritti1', 'ritti2', 'ritti3'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902369-HPd9Hl0BzV.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '立地適正化計画';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+else if (groupId === '過去最大雨量') {
+                groupLayers = ['kiousaidai'];
+imageContainer.innerHTML = '<img src="https://assets.st-note.com/img/1703128902325-Hy9tVD8SIU.jpg?width=800&dpr=2" style="position: fixed; right: 5px; bottom: 40px;">';
+
+// メディアクエリを使用してデバイスの幅に応じたスタイルを適用
+const mediaQuery = window.matchMedia('(max-width: 500px)');
+
+if (mediaQuery.matches) {
+  // デバイスの幅が768px以下の場合
+  imageContainer.querySelector('img').style.width = '55%';
+} else {
+  // デバイスの幅が768pxより大きい場合
+  imageContainer.querySelector('img').style.width = '30%';
+}
+// 右上に文字情報を表示
+    const infoText = '土砂災害警戒区域';  // 適切な文字情報をここに設定
+    const infoElement = document.createElement('div');
+    infoElement.textContent = infoText;
+    infoElement.style.position = 'fixed';
+    infoElement.style.right = '5px';
+    infoElement.style.top = '5px';
+    document.body.appendChild(infoElement);
+infoElement.style.backgroundColor = 'white';
+infoElement.style.width = '10%';  // 適切な幅を指定してください
+document.body.appendChild(infoElement);
+            }
+
+
+
+            var visibility = map.getLayoutProperty(groupLayers[0], 'visibility');
+
+            if (visibility === 'visible') {
+                groupLayers.forEach(function(layerId) {
+                    map.setLayoutProperty(layerId, 'visibility', 'none');
+                });
+                event.target.classList.remove('active');
+            } else {
+                groupLayers.forEach(function(layerId) {
+                    map.setLayoutProperty(layerId, 'visibility', 'visible');
+                });
+                event.target.classList.add('active');
+
+
+            }
+
+        }
+
+function resetVisibility() {
+      var buttons = document.getElementsByClassName('menu')[0].getElementsByTagName('button');
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.remove('active');
+      }
+
+      var groupLayers = ['ShelterE', 'l21', 'l22', 'l23', 'l24', 'l25', 'l26', 'SCaution-Landslide', 'SCaution-Debrisflow', 'SCaution-steepslopes', 'Caution-Landslide', 'Caution-Debrisflow', 'Caution-steepslopes','dam','tsunami-1', 'tsunami-2', 'tsunami-3', 'tsunami-4', 'tsunami-5','velocity1', 'velocity2', 'velocity3','time1', 'time2', 'time3', 'time4','k1', 'k2', 'k3', 'k4','waterfacility','observatory', 'Suii', 'car', 'ritti1', 'ritti2', 'ritti3',  'zinkou', 'kiousaidai', 'kankou', 'tochi1', 'tochi2', 'tochi3', 'tochi4', 'tochi5', 'tochi6', 'tochi7', 'tochi8', 'tochi9', 'tochi10', 'tochi11', 'tochi12'];
+
+groupLayers.forEach(function (layerId) {
+        map.setLayoutProperty(layerId, 'visibility', 'none');
+      });
+
+      imageContainer.innerHTML = '';
+    }
+
+const geocoder = new MapboxGeocoder({
+// Initialize the geocoder
+accessToken: mapboxgl.accessToken, // Set the access token
+mapboxgl: mapboxgl, // Set the mapbox-gl instance
+placeholder: '　　検索', // Placeholder text for the search bar
+});
+ 
+// After the map style has loaded on the page,
+// add a source layer and default styling for a single point
+map.on('load', function() {
+      const directions = new MapboxDirections({
+        accessToken: mapboxgl.accessToken,
+        language: 'ja',
+        unit: 'metric',
+        
+        profile: 'mapbox/walking',
+        controls: {
+          inputs: {
+            instructions: false,
+          },
+          instructions: true,
+        },
+      });
+ 
+document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+
+map.addLayer({
+'id': 'point',
+'source': 'single-point',
+'type': 'circle',
+'paint': {
+'circle-radius': 10,
+'circle-color': '#448ee4'
+}
+});
+ 
+// Listen for the `result` event from the Geocoder // `result` event is triggered when a user makes a selection
+//  Add a marker at the result's coordinates
+geocoder.on('result', (event) => {
+map.getSource('single-point').setData(event.result.geometry);
+});
+});
+
+var directions = new MapboxDirections({
+        accessToken: mapboxgl.accessToken,
+        language: 'ja'
+    });
+    
+    var directionsControl = new mapboxgl.NavigationControl();
+    
+    map.addControl(directionsControl, 'top-left');
+    
+    var directionsActive = false;
+    
+    function toggleDirections() {
+        if (directionsActive) {
+            map.removeControl(directions);
+            directionsActive = false;
+        } else {
+            map.addControl(directions);
+            directionsActive = true;
+        }
+    } 
+    
+function moveToCoordinates() {
+  var latitude = 36.695889; // Specify the latitude value
+  var longitude = 137.213639; // Specify the longitude value
+  var zoom = 14; // Specify the zoom level
+
+  map.flyTo({
+    center: [longitude, latitude],
+    zoom: zoom
+  });
+}
+
+// 水位
+// クリックイベントの処理
+
+map.on('click', function(e) {
+  var features = map.queryRenderedFeatures(e.point, { layers: ['Suii'] });
+
+  if (features.length > 0) {
+    var feature = features[0];
+    var SuiiName = feature.properties['名称'];
+
+    var imageURL, scrapingInfoURL;
+
+    if (SuiiName === '神通大橋') {
+      imageURL = 'http://www.hrr.mlit.go.jp/bosai/img/751018.jpg';  // 柳町小学校の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbzOtTK-n7QmEbXzB7daVfUxjXxS3HlXZFcFt0SO8UACzQ9Ei2ivwxPZvG5Ll2WSb8GB/exec';  // 
+    } else if (SuiiName === '土川橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04001.jpg';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // スクレイピング情報のURL
+} else if (SuiiName === '長沢橋') {
+      imageURL = 'https://www.toyama-douro.toyama.toyama.jp/kl/camimg/camimg212.jpg';  // aa
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbxNtzraPE_QIK2DD9mGFkDA8LTvjDyGZFNqIq9gbvibT8u9aSx4s0pSUrLuLS9S6kCM7g/exec';  // スクレイピング情報のURL
+} else if (SuiiName === '千歳橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04003.jpg';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbwtJJt6KosIe6T9UX7iQHUQkR42sBGOlhPohchQ0eSTfuz9Zc_7Lx-DNVuzuUsQkfUF4Q/exec';  // スクレイピング情報のURL
+} else if (SuiiName === '坪野橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04004.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '田島川・祖母川合流点') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04005.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '花園橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04501.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '太田新橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04502.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '太田本郷橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04503.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '松川橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04504.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '恵光学園前') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04505.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '赤江川橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04506.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === 'ひよどり南橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04507.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '宮嶋橋') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04508.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '山田行政センター前') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04509.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '磯川') {
+      imageURL = 'http://kawa.pref.toyama.jp/camera/image/camera04510.jpg';  // 土川橋の画像URL
+scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyr4eXa_j2lj2BtRHSZMCz6OX5C8QI_E7eu3ABj3wkiH3_Q6MmX4f9ghEVs4YLgy6Te_Q/exec';  // 偽
+} else if (SuiiName === '大野沢大橋') {
+      imageURL = 'http://www.hrr.mlit.go.jp/bosai/img/751047.jpg';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbzaXdrJcGEgMAtJywxzkdU3AKQh8bczOaxWYn1UJNO2DCk6vbDe9QYCJ9YdxV2Iw9M/exec';  // スクレイピング情報のURL
+} else if (SuiiName === '熊野橋') {
+      imageURL = 'http://www.hrr.mlit.go.jp/bosai/img/751041.jpg';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbz5XUD_DWzWQP-hkPp3NiNjZAoRJ-1tc0V4gz7fWmJiIxoZyD8PkKnhHuZzNvH2C-6w/exec';  // スクレイピング情報のURL
+} else if (SuiiName === '西里橋') {
+      imageURL = 'https://www.hrr.mlit.go.jp/bosai/img/754022.jpg';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbxkm7iCyL0Qx7EqdRdHonu0upZdWOjgb6QhKUkBBk0gTmnYeb6vmv0mHKhbwYqo462Riw/exec';  // スクレイピング情報のURL
+
+    }
+
+    // スクレイピング情報を取得してポップアップに追加
+    fetch(scrapingInfoURL)
+      .then(response => response.json())
+      .then(scrapingData => {
+        // スクレイピング情報をHTMLに組み込む
+        var scrapingInfoHTML = '<ul>';
+
+        scrapingData.forEach(entry => {
+          scrapingInfoHTML += '<li>水位: ' + entry["水位"] + ', 危険度レベル: ' + entry["危険度レベル"] + '</li>';
+        });
+
+        scrapingInfoHTML += '</ul>';
+
+        var popupContent = '<h3 style="font-size: 18px; font-family: Arial, sans-serif;">' +
+                          '<span style="background-color: lightblue; padding: 5px;">' + SuiiName + '</span>' +
+                          '</h3>' +
+                          '<img src="' + imageURL + '" alt="Image" style="max-width: 100%; height: auto;">' +
+                          scrapingInfoHTML;
+
+        // ポップアップを表示
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(popupContent)
+          .addTo(map);
+      })
+      .catch(error => {
+        console.error("スクレイピング情報の取得に失敗しました", error);
+      });
+  }
+});
+
+
+
+
+map.on('click', function(e) {
+    var carFeatures = map.queryRenderedFeatures(e.point, { layers: ['car'] });
+    if (carFeatures.length > 0) {
+        var carFeature = carFeatures[0];
+        
+        var popupContent = document.createElement('div');
+        
+        // タイトル
+        var title = document.createElement('h3');
+        title.textContent = carFeature.properties['名称'];
+title.style.fontSize = '18px'; // タイトルの文字サイズを設定
+        title.style.backgroundColor = 'lightblue'; // タイトルの背景色を設定
+        
+        // car
+        var capacity = document.createElement('p');
+        capacity.innerHTML = '<strong>注意:</strong> ' + carFeature.properties['特徴'];
+        
+        // タイトルと想定収容人数をポップアップコンテンツに追加
+        popupContent.appendChild(title);
+        popupContent.appendChild(capacity);
+        
+        // carの名称によって異なる画像を設定
+        var photoURL = '';
+
+        if (carFeature.properties['名称'] === '富山市牛島本町') {
+            photoURL = 'https://www.toyama-douro.toyama.toyama.jp/kl/camimg/camimg253.jpg';
+        } else if (carFeature.properties['名称'] === '富山市田刈屋') {
+            photoURL = 'https://www.toyama-douro.toyama.toyama.jp/kl/camimg/camimg240.jpg';
+} else if (carFeature.properties['名称'] === '富山市婦中町塚') {
+            photoURL = 'https://www.toyama-douro.toyama.toyama.jp/kl/camimg/camimg313.jpg';
+} else if (carFeature.properties['名称'] === '富山市楡原') {
+            photoURL = 'http://www.hrr.mlit.go.jp/bosai/img/751041D22929.jpg';
+} else if (carFeature.properties['名称'] === '富山市婦中町安田') {
+            photoURL = 'https://www.toyama-douro.toyama.toyama.jp/kl/camimg/camimg212.jpg';
+} else if (carFeature.properties['名称'] === '富山市安養寺') {
+            photoURL = 'https://www.hrr.mlit.go.jp/bosai/img/751041D24030.jpg';
+} else if (carFeature.properties['名称'] === '飛騨市古川町杉崎') {
+            photoURL = 'https://www.cbr.mlit.go.jp/takayama/cctv/cctv_img/20410900.jpg';
+        } else {
+            // 他のcarに対する画像のURLを設定
+        }
+
+        if (photoURL) {
+            // 写真をポップアップコンテンツに追加
+            var image = document.createElement('img');
+            image.src = photoURL;
+            image.alt = 'carの写真';
+            image.style.maxWidth = '100%';
+            popupContent.appendChild(image);
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setDOMContent(popupContent)
+            .addTo(map);
+    }
+});
+
+
+
+map.on('click', function(e) {
+    var shelterFeatures = map.queryRenderedFeatures(e.point, { layers: ['ShelterE'] });
+    if (shelterFeatures.length > 0) {
+        var shelterFeature = shelterFeatures[0];
+        
+        var popupContent = document.createElement('div');
+        
+        // タイトル
+        var title = document.createElement('h3');
+        title.textContent = shelterFeature.properties['名称'];
+title.style.fontSize = '18px'; // タイトルの文字サイズを設定
+        title.style.backgroundColor = 'lightblue'; // タイトルの背景色を設定
+        
+        // 想定収容人数
+        var capacity = document.createElement('p');
+        capacity.innerHTML = '<strong>想定収容人数:</strong> ' + shelterFeature.properties['想定収容人数'];
+        
+        // タイトルと想定収容人数をポップアップコンテンツに追加
+        popupContent.appendChild(title);
+        popupContent.appendChild(capacity);
+        
+        // 避難所の名称によって異なる画像を設定
+        var photoURL = '';
+
+        if (shelterFeature.properties['名称'] === 'あ') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11079/responsive_images/O1s8vyHIwQ926AmHe5sM6zC6Qwoo0B2qPV0DGsyB__1791_1189.jpeg';
+        } else if (shelterFeature.properties['名称'] === 'い') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11079/responsive_images/eDJ0RVEjdS5PsLNsYflzZtjIh6u48oCIQs9BNXfo__1673_1115.jpeg';
+        } else {
+            // 他の避難所に対する画像のURLを設定
+        }
+
+        if (photoURL) {
+            // 写真をポップアップコンテンツに追加
+            var image = document.createElement('img');
+            image.src = photoURL;
+            image.alt = '避難所の写真';
+            image.style.maxWidth = '100%';
+            popupContent.appendChild(image);
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setDOMContent(popupContent)
+            .addTo(map);
+    }
+});
+
+
+map.on('click', function(e) {
+    var damFeatures = map.queryRenderedFeatures(e.point, { layers: ['dam'] });
+    if (damFeatures.length > 0) {
+        var damFeature = damFeatures[0];
+        
+        var popupContent = document.createElement('div');
+        
+        // タイトル
+        var title = document.createElement('h3');
+        title.textContent = damFeature.properties['名称'];
+title.style.fontSize = '18px'; // タイトルの文字サイズを設定
+        title.style.backgroundColor = 'lightblue'; // タイトルの背景色を設定
+        
+        // dam
+        var capacity = document.createElement('p');
+capacity.innerHTML = '<strong>役割:</strong> ' + damFeature.properties['役割'] + '<br><strong>総貯水量:</strong> ' + damFeature.properties['総貯水量(千m3)'] + '㎥'　+ '<br><strong>有効貯水容量:</strong> ' + damFeature.properties['有効貯水容量'] + '㎥';
+
+        
+        // タイトルと色々をポップアップコンテンツに追加
+        popupContent.appendChild(title);
+        popupContent.appendChild(capacity);
+        
+        // damの名称によって異なる画像を設定
+        var photoURL = '';
+
+        if (damFeature.properties['名称'] === '川防災') {
+            photoURL = 'http://damnet.sakura.ne.jp/Dambinran/Photo/1109KTA526D.jpg';
+        } else {
+            // 他のダムに対する画像のURLを設定
+        }
+
+        if (photoURL) {
+            // 写真をポップアップコンテンツに追加
+            var image = document.createElement('img');
+            image.src = photoURL;
+            image.alt = 'ダムの写真';
+            image.style.maxWidth = '100%';
+            popupContent.appendChild(image);
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setDOMContent(popupContent)
+            .addTo(map);
+    }
+});
+
+
+map.on('click', function(e) {
+    var kankouFeatures = map.queryRenderedFeatures(e.point, { layers: ['kankou'] });
+    if (kankouFeatures.length > 0) {
+        var kankouFeature = kankouFeatures[0];
+        
+        var popupContent = document.createElement('div');
+        
+        // タイトル
+        var title = document.createElement('h3');
+        title.textContent = kankouFeature.properties['名称'];
+title.style.fontSize = '18px'; // タイトルの文字サイズを設定
+        title.style.backgroundColor = 'lightblue'; // タイトルの背景色を設定
+        
+        // kankou
+        var capacity = document.createElement('p');
+capacity.innerHTML = '<strong>特徴:</strong> ' + kankouFeature.properties['特徴'];
+
+        
+        // タイトルと色々をポップアップコンテンツに追加
+        popupContent.appendChild(title);
+        popupContent.appendChild(capacity);
+        
+        // kankouの名称によって異なる画像を設定
+        var photoURL = '';
+
+        if (kankouFeature.properties['名称'] === '大転石') {
+            photoURL = 'https://www.hrr.mlit.go.jp/tateyama/gakusyuu/tanken/img/point-05/point-05.jpg';
+} else if (kankouFeature.properties['名称'] === '神通川の馳越工事等') {
+            photoURL = 'https://www.pref.toyama.jp/images/6136/img00423270.jpg';
+} else if (kankouFeature.properties['名称'] === '河川敷の富山空港') {
+            photoURL = 'https://www.pref.toyama.jp/images/4983/img00379509.jpg';
+} else if (kankouFeature.properties['名称'] === 'ます寿司') {
+            photoURL = 'https://www.info-toyama.com/storage/blog_articles/141/responsive_images/qIp3DiJdmyltMBRuKVYH2mhBtRjh7VdScVOZexT9__1500_1000.jpeg';
+} else if (kankouFeature.properties['名称'] === '神通川の伝統漁法') {
+            photoURL = 'https://www.pref.toyama.jp/images/12914/masuzushi.jpg';
+} else if (kankouFeature.properties['名称'] === '松川遊覧船') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11029/responsive_images/D0r2DivsEcoNLAe0GodIIbpVSAiLEJyw50fgUzFa__1185_790.jpeg';
+} else if (kankouFeature.properties['名称'] === '富山市科学博物館') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11019/responsive_images/H5HM6dz9WlbQBT7UqAYTEgKwzi5712RlQgicV2Kg__600_402.jpeg';
+} else if (kankouFeature.properties['名称'] === 'エンナカ（火防・流雪用水路）') {
+            photoURL = 'https://www.pref.toyama.jp/images/12957/ph_ennaka2.jpg';
+} else if (kankouFeature.properties['名称'] === '婦中曲水の宴（各願寺）') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/10024/responsive_images/jBSXFVLEMA4CFflZFul14xVW3V6aLDJeTiUuxGKW__800_600.jpeg';
+} else if (kankouFeature.properties['名称'] === '富岩運河水閘施設（中島閘門）') {
+            photoURL = 'https://www.pref.toyama.jp/images/6132/img00343643.jpg';
+} else if (kankouFeature.properties['名称'] === '富山県富岩運河環水公園') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11009/responsive_images/DpMW1WGQRgMb6kPBTiCgaYCijo7oaRthVykeE73K__484_364.jpeg';
+} else if (kankouFeature.properties['名称'] === '富岩水上ライン') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/80043/responsive_images/xny9yEeqDwZB2EQtDns4rSTUYtEHtyw1cvkfwSEz__1171_780.jpeg';
+} else if (kankouFeature.properties['名称'] === '石倉町の延命地蔵の水') {
+            photoURL = 'https://www.pref.toyama.jp/images/12715/31_ishikuramachienmeijizonomizu_zenbo.jpg';
+} else if (kankouFeature.properties['名称'] === '殿様清水') {
+            photoURL = 'https://www.pref.toyama.jp/images/12719/35_tonosamasyozu.jpg';
+} else if (kankouFeature.properties['名称'] === '八木山の滝') {
+            photoURL = 'https://www.pref.toyama.jp/images/12697/36_yakiyamanotaki.jpg';
+} else if (kankouFeature.properties['名称'] === '神通峡') {
+            photoURL = 'https://www.info-toyama.com/storage/tourism_attractions/11079/responsive_images/O1s8vyHIwQ926AmHe5sM6zC6Qwoo0B2qPV0DGsyB__1049_696.jpeg';
+} else if (kankouFeature.properties['名称'] === '桂の清水') {
+            photoURL = 'https://www.pref.toyama.jp/images/12699/38_katsuranoshimizu.jpg';
+} else if (kankouFeature.properties['名称'] === '加持水') {
+            photoURL = 'https://www.pref.toyama.jp/images/12700/39_kajisui.jpg';
+} else if (kankouFeature.properties['名称'] === '花山寺の霊水') {
+            photoURL = 'https://www.pref.toyama.jp/images/12701/40_kazanjinoreisui.jpg';
+} else if (kankouFeature.properties['名称'] === '朝日の滝') {
+            photoURL = 'https://www.pref.toyama.jp/images/12702/41_asahinotaki.jpg';
+} else if (kankouFeature.properties['名称'] === '白雲水') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5212.jpg';
+} else if (kankouFeature.properties['名称'] === '銚子谷') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5214.jpg';
+} else if (kankouFeature.properties['名称'] === '鳩谷八幡神社の清水') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5216.jpg';
+} else if (kankouFeature.properties['名称'] === '女男滝') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5218.jpg';
+} else if (kankouFeature.properties['名称'] === '宇津江四十八滝') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5222.jpg';
+} else if (kankouFeature.properties['名称'] === '瀬戸川用水') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5220.jpg';
+} else if (kankouFeature.properties['名称'] === '池ヶ原湿原湧水') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5224.jpg';
+} else if (kankouFeature.properties['名称'] === '船津大洞湧水群') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5226.jpg';
+} else if (kankouFeature.properties['名称'] === '平湯大滝') {
+            photoURL = 'https://www.pref.gifu.lg.jp/uploaded/image/5228.jpg';
+        } else {
+            // 他の観光に対する画像のURLを設定
+        }
+
+        if (photoURL) {
+            // 写真をポップアップコンテンツに追加
+            var image = document.createElement('img');
+            image.src = photoURL;
+            image.alt = '観光の写真';
+            image.style.maxWidth = '100%';
+            popupContent.appendChild(image);
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setDOMContent(popupContent)
+            .addTo(map);
+    }
+});
+
+
+map.on('click', function(e) {
+  var features = map.queryRenderedFeatures(e.point, { layers: ['kiousaidai'] });
+
+  if (features.length > 0) {
+    var feature = features[0];
+    var kiousaidaiName = feature.properties['名称'];
+
+    var imageURL, scrapingInfoURL;
+
+    if (kiousaidaiName === '富山') {
+      imageURL = '';  // 柳町小学校の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyhnOYIZf-pUvB6u9V4c_3U587XGDWMM-zEHeiHEyJmdnUzYza4SkokQuW0MaCTNKtpTw/exec';  // 偽
+    } else if (kiousaidaiName === '大山') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbxttT8xG-EIbsCRHPBLJX5ZUifEGAcqEsmO0wx6q0T9IQ-lWv-g8lRJWP9utdqWCpx6/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '小谷') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyhnOYIZf-pUvB6u9V4c_3U587XGDWMM-zEHeiHEyJmdnUzYza4SkokQuW0MaCTNKtpTw/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '細入') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyhnOYIZf-pUvB6u9V4c_3U587XGDWMM-zEHeiHEyJmdnUzYza4SkokQuW0MaCTNKtpTw/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '猪谷') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyN4KWX_Jc4eG2gbIJZKoQV75dFBKry4J_SqUxpGYZzkFdKjYCRD3tU8lopCSqpAs0-/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '谷折') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyhnOYIZf-pUvB6u9V4c_3U587XGDWMM-zEHeiHEyJmdnUzYza4SkokQuW0MaCTNKtpTw/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '八尾') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbyfMOHQKdfKsZ9bPyT6Ri4dLOvEcDLpp83aNnFGChjTacMyh3VIQTP82dv_1T62feug/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '秋ケ島') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbzJI_VcxMUVXOmejbn8YjR-_hgxvu1oGQIu6dF5-suPGEeyXjVo53IVpK0tj5b1FnFYSA/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '栃尾') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbx_3_aZW4OgURUfPD9SdlVufoORXU0NiT_mSogGoHPyoXsQZFoNii2VzjBTZc6WRhEu/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '神岡') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbzcpGG3iIefCuTlVVqE8rXy7VvxnooNfPRYP9xCdUDbWeMBnngfB-mXI0Oj6d1DiShl/exec';  // スクレイピング情報のURL
+} else if (kiousaidaiName === '河合') {
+      imageURL = '';  // 土川橋の画像URL
+      scrapingInfoURL = 'https://script.google.com/macros/s/AKfycbw0mWvkbivu5lXe54Zq9msL9US2MDZ6JCrhcpr_sxWOEsBQ609DSe0-HokSQ47FZfjPyA/exec';  // スクレイピング情報のURL
+
+    }
+
+    // スクレイピング情報を取得してポップアップに追加
+    fetch(scrapingInfoURL)
+      .then(response => response.json())
+      .then(scrapingData => {
+        // スクレイピング情報をHTMLに組み込む
+        var scrapingInfoHTML = '<ul>';
+
+        scrapingData.forEach(entry => {
+  scrapingInfoHTML += '<li style="background-color: yellow;"><strong>現在の雨量:</strong> ' + entry["現在の雨量"] ;
+});
+
+
+        scrapingInfoHTML += '</ul>';
+
+        // 過去最大降水量情報を追加
+        scrapingInfoHTML += '<p><strong>過去最大1時間降水量:</strong> ' + feature.properties['日最大1時間降水量'] + 'mm/h' + '<br><strong>過去最大1日降水量:</strong> ' + feature.properties['日降水量'] + 'mm/h</p>';
+
+        var popupContent = '<h3 style="font-size: 18px; font-family: Arial, sans-serif;">' +
+                          '<span style="background-color: lightblue; padding: 5px;">' + kiousaidaiName + '</span>' +
+                          '</h3>' +
+                          scrapingInfoHTML;
+
+        // ポップアップを表示
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(popupContent)
+          .addTo(map);
+      })
+      .catch(error => {
+        console.error("スクレイピング情報の取得に失敗しました", error);
+      });
+  }
+});
+
+
+map.on('click', function(e) {
+    var waterfacilityFeatures = map.queryRenderedFeatures(e.point, { layers: ['waterfacility'] });
+    if (waterfacilityFeatures.length > 0) {
+        var waterfacilityFeature = waterfacilityFeatures[0];
+        
+        var popupContent = document.createElement('div');
+        
+        // タイトル
+        var title = document.createElement('h3');
+        title.textContent = waterfacilityFeature.properties['名称'];
+title.style.fontSize = '18px'; // タイトルの文字サイズを設定
+        title.style.backgroundColor = 'lightblue'; // タイトルの背景色を設定
+        
+        // waterfacility
+        var capacity = document.createElement('p');
+capacity.innerHTML = '<strong>役割:</strong> ' + waterfacilityFeature.properties['役割'];
+
+        
+        // タイトルと色々をポップアップコンテンツに追加
+        popupContent.appendChild(title);
+        popupContent.appendChild(capacity);
+        
+        // waterfacilityの名称によって異なる画像を設定
+        var photoURL = '';
+
+        if (waterfacilityFeature.properties['名称'] === '流杉浄水場') {
+            photoURL = 'https://www.city.toyama.lg.jp/_res/projects/default_project/_page_/001/007/724/shisetsu.bmp';
+        } else {
+            // 他のwaterfacilityに対する画像のURLを設定
+        }
+
+        if (photoURL) {
+            // 写真をポップアップコンテンツに追加
+            var image = document.createElement('img');
+            image.src = photoURL;
+            image.alt = 'waterfacilityの写真';
+            image.style.maxWidth = '100%';
+            popupContent.appendChild(image);
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setDOMContent(popupContent)
+            .addTo(map);
+    }
+});
+
+
+  </script>
+
+<script>
+    function toggleButtons(folderId) {
+      var folder = document.getElementById(folderId);
+      var currentDisplay = folder.style.display;
+      folder.style.display = currentDisplay === '' || currentDisplay === 'none' ? 'block' : 'none';
+    }
+  </script>
+</body>
+<body>
+
+    <script>
+map.on('load', function () {
+        if (!map.getLayer('gyouseikuiki-249qzb')) {
+            console.error('指定されたレイヤーが存在しません。');
+            return;
+        }
+
+        document.getElementById('㋷気象警報・注意報').addEventListener('click', function () {
+            // APIからデータを取得
+            fetch('https://script.google.com/macros/s/AKfycbydnq2ew3CILJ9t2Hu0lhqijFTGGQQpK-x7rj2EJYWrqezwnQKxTfCo9jHsz_v5o2JA/exec')
+                .then(response => response.json())
+                .then(data => {
+                    var paintProperty = [
+                        'match',
+                        ['get', 'N03_004'], // N03_004 プロパティの値を取得
+                    ];
+
+                    data.forEach(item => {
+                        var city = item["市町村"].trim(); // 前後の空白を除去
+                        var alertType = item["気象警報"].trim();
+
+                        var color;
+                        if (alertType === "雷") {
+                            color = 'rgba(255, 255, 0, 0.4)'; // 黄色
+                        } else if (alertType === "大雨雷") {
+                            color = 'rgba(0, 0, 255, 0.4)'; // 青色
+                        } else if (alertType === "大雨雷洪水","大雨洪水雷") {
+                            color = 'rgba(255, 0, 0, 0.4)'; // 赤色
+                        } else {
+                            color = 'rgba(0, 0, 0, 0)'; // その他の場合は無色（透明）
+                        }
+
+                        paintProperty.push(city, color);
+                    });
+
+                    // デフォルトの色（無色）を設定
+                    paintProperty.push('rgba(0, 0, 0, 0)');
+
+                    // 地図のスタイルを更新
+            map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', paintProperty);
+
+            // 5秒後にリセット
+            setTimeout(function () {
+                map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', [
+                    'match',
+                    ['get', 'N03_004'],
+                    '',
+                    'rgba(0, 0, 0, 0)',
+                    'rgba(0, 0, 0, 0)'
+                ]);
+            }, 5000);
+        })
+        .catch(error => {
+            console.error('APIからデータを取得できませんでした。', error);
+        });
+});
+    });
+
+
+map.on('load', function () {
+        if (!map.getLayer('gyouseikuiki-249qzb')) {
+            console.error('指定されたレイヤーが存在しません。');
+            return;
+        }
+document.getElementById('㋷避難情報').addEventListener('click', function () {
+            // APIからデータを取得
+            fetch('https://script.google.com/macros/s/AKfycbwdjLTq7LKL831JNGLh6Ike-7vkjfHPy2mnjFDn1XqCjmZgf2kEAmCE6PK6vhBANLUD/exec')
+                .then(response => response.json())
+                .then(data => {
+                    var paintProperty = [
+                        'match',
+                        ['get', 'N03_004'], // N03_004 プロパティの値を取得
+                    ];
+
+                    data.forEach(item => {
+                        var city = item["市町村"].trim(); // 前後の空白を除去
+                        var alertType = item["最上位発令区分"].trim();
+
+                        var color;
+                        if (alertType === "1") {
+                            color = 'rgba(255, 255, 0, 0.4)'; // 黄色
+                        } else if (alertType === "大雨雷") {
+                            color = 'rgba(0, 0, 255, 0.4)'; // 青色
+                        } else if (alertType === "大雨雷洪水","大雨洪水雷") {
+                            color = 'rgba(255, 0, 0, 0.4)'; // 赤色
+                        } else {
+                            color = 'rgba(0, 0, 0, 0)'; // その他の場合は無色（透明）
+                        }
+
+                        paintProperty.push(city, color);
+                    });
+
+                    // デフォルトの色（無色）を設定
+                    paintProperty.push('rgba(0, 0, 0, 0)');
+
+                    // 地図のスタイルを更新
+            map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', paintProperty);
+
+            // 5秒後にリセット
+            setTimeout(function () {
+                map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', [
+                    'match',
+                    ['get', 'N03_004'],
+                    '',
+                    'rgba(0, 0, 0, 0)',
+                    'rgba(0, 0, 0, 0)'
+                ]);
+            }, 5000);
+        })
+        .catch(error => {
+            console.error('APIからデータを取得できませんでした。', error);
+        });
+});
+    });
+
+map.on('load', function () {
+        if (!map.getLayer('gyouseikuiki-249qzb')) {
+            console.error('指定されたレイヤーが存在しません。');
+            return;
+        }
+
+        document.getElementById('㋷避難情報').addEventListener('click', function () {
+            // APIからデータを取得
+            fetch('https://script.google.com/macros/s/AKfycbwdjLTq7LKL831JNGLh6Ike-7vkjfHPy2mnjFDn1XqCjmZgf2kEAmCE6PK6vhBANLUD/exec')
+                .then(response => response.json())
+                .then(data => {
+                    var paintProperty = ['match', ['get', 'N03_004']];
+
+                    data.forEach(item => {
+                        var city = item["市町村"].trim();
+                        var alertType = item["避難情報"];
+
+                        var color;
+                        if (alertType === "緊急安全確保") {
+                            color = 'rgba(0, 0, 0, 0.4)'; // 黒
+                        } else if (alertType === "避難指示") {
+                            color = 'rgba(128, 0, 128, 0.4)'; // 紫
+                        } else if (alertType === "高齢者等避難") {
+                            color = 'rgba(255, 0, 0, 0.4)'; // 赤
+                        } else if (alertType === "大雨・洪水・高潮注意報") {
+                            color = 'rgba(255, 255, 0, 0.4)'; // 黄色
+                        } else {
+                            color = 'rgba(0, 0, 0, 0)'; // その他の場合は透明
+                        }
+
+                        paintProperty.push(city, color);
+                    });
+
+                    // デフォルトの色（透明）を設定
+                    paintProperty.push('rgba(0, 0, 0, 0)');
+
+                    // 地図のスタイルを更新
+            map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', paintProperty);
+
+            // 5秒後にリセット
+            setTimeout(function () {
+                map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', [
+                    'match',
+                    ['get', 'N03_004'],
+                    '',
+                    'rgba(0, 0, 0, 0)',
+                    'rgba(0, 0, 0, 0)'
+                ]);
+            }, 5000);
+        })
+        .catch(error => {
+            console.error('APIからデータを取得できませんでした。', error);
+        });
+});
+    });
+
+    map.on('load', function () {
+        if (!map.getLayer('gyouseikuiki-249qzb')) {
+            console.error('指定されたレイヤーが存在しません。');
+            return;
+        }
+
+        document.getElementById('㋷避難所情報').addEventListener('click', function () {
+            // APIからデータを取得
+            fetch('https://script.google.com/macros/s/AKfycbyKh84i0RROYUVV_XUG2h2aPzGfM1tWWRlbbDPUhqFaEfVmbA86YaGMlkPfzE6pyFGu/exec')
+                .then(response => response.json())
+                .then(data => {
+                    var paintProperty = ['match', ['get', 'N03_004']];
+
+                    data.forEach(item => {
+                        var city = item["市町村"].trim();
+                        var alertType = item["開設数"];
+
+                        var color;
+                        var alertNumber = parseInt(alertType);
+
+                        if (alertNumber >= 1 && alertNumber <= 5) {
+                            color = 'rgba(169, 206, 236, 0.4)'; // 白
+                        } else if (alertNumber >= 6 && alertNumber <= 10) {
+                            color = 'rgba(0, 0, 255, 0.4)'; // 青
+                        } else if (alertNumber >= 11 && alertNumber <= 15) {
+                            color = 'rgba(255, 255, 0, 0.4)'; // 黄色
+                        } else {
+                            color = 'rgba(0, 0, 0, 0)'; // 透明
+                        }
+
+                        paintProperty.push(city, color);
+                    });
+
+                    // デフォルトの色（透明）を設定
+                    paintProperty.push('rgba(0, 0, 0, 0)');
+
+                    // 地図のスタイルを更新
+            map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', paintProperty);
+
+            // 5秒後にリセット
+            setTimeout(function () {
+                map.setPaintProperty('gyouseikuiki-249qzb', 'fill-color', [
+                    'match',
+                    ['get', 'N03_004'],
+                    '',
+                    'rgba(0, 0, 0, 0)',
+                    'rgba(0, 0, 0, 0)'
+                ]);
+            }, 5000);
+        })
+        .catch(error => {
+            console.error('APIからデータを取得できませんでした。', error);
+        });
+});
+    });
+
+let rainLayerVisible = false; // 初期状態は非表示
+
+      window.map = map;
+
+      map.on("load", () => {
+        fetch("https://api.rainviewer.com/public/weather-maps.json")
+          .then(res => res.json())
+          .then(apiData => {
+            const latestFrame = apiData.radar.past[apiData.radar.past.length - 1];
+            
+            map.addLayer({
+              id: `rainviewer_${latestFrame.path}`,
+              type: "raster",
+              source: {
+                type: "raster",
+                tiles: [
+                  apiData.host + latestFrame.path + '/256/{z}/{x}/{y}/2/1_1.png'
+                ],
+                tileSize: 256
+              },
+              layout: { visibility: rainLayerVisible ? "visible" : "none" }, // 初期状態で表示または非表示を設定
+              minzoom: 0,
+              maxzoom: 15
+            });
+
+            // 他の時間のデータを非表示にする
+            apiData.radar.past.forEach(frame => {
+              if (frame !== latestFrame) {
+                map.setLayoutProperty(
+                  `rainviewer_${frame.path}`,
+                  "visibility",
+                  "none"
+                );
+              }
+            });
+
+            // 雨雲の透明度を設定
+            map.setPaintProperty(
+              `rainviewer_${latestFrame.path}`,
+              "raster-opacity",
+              0.3 // 0から1の間で透明度を設定 (0は完全に透明、1は完全に表示)
+            );
+
+            // ボタンのクリックイベントを追加
+            const toggleButton = document.getElementById('㋷現在の雨雲');
+           toggleButton.addEventListener('click', () => {
+              if (rainLayerVisible) {
+                map.setLayoutProperty(
+                  `rainviewer_${latestFrame.path}`,
+                  "visibility",
+                  "none"
+                );
+              } else {
+                map.setLayoutProperty(
+                  `rainviewer_${latestFrame.path}`,
+                  "visibility",
+                  "visible"
+                );
+              }
+              rainLayerVisible = !rainLayerVisible;
+            });
+          })
+          .catch(console.error);
+      });
+
+  const folders = document.querySelectorAll('.folder, .menu');
+  const buttons = document.querySelectorAll('.menu button, .folder button, .folder buttons, folder-buttons');
+
+  let currentIndex = 0;
+
+  // 初期化ボタンにフォーカスを設定
+  buttons[currentIndex].focus();
+  buttons[currentIndex].classList.add('focused'); // 初期状態で「focused」クラスを追加
+
+  window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowUp':
+        currentIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+        break;
+      case 'ArrowDown':
+        currentIndex = (currentIndex + 1) % buttons.length;
+        break;
+      case 'ArrowLeft':
+        if (folders[currentIndex]) {
+          folders[currentIndex].classList.remove('open');
+        }
+        break;
+      case 'ArrowRight':
+        if (folders[currentIndex]) {
+          folders[currentIndex].classList.add('open');
+        }
+        break;
+      case ' ':
+        if (folders[currentIndex]) {
+          folders[currentIndex].classList.toggle('open');
+        }
+        break;
+      default:
+        return;
+    }
+
+    // 移動後のボタンにフォーカスを設定
+    buttons[currentIndex].focus();
+
+    // フォーカスを持つ要素に「focused」クラスを追加
+    buttons[currentIndex].classList.add('focused');
+
+    // 前のフォーカスを持つ要素から「focused」クラスを削除
+    if (currentIndex > 0) {
+      buttons[currentIndex - 1].classList.remove('focused');
+    } else {
+      buttons[buttons.length - 1].classList.remove('focused');
+    }
+  });
+
+    </script>
+
+</body>
+
+</html>
